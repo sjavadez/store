@@ -1,0 +1,51 @@
+version: '3'
+services:
+  php :
+    hostname: store_php
+    build : ./Docker/php
+    container_name : store_php
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+    volumes :
+      - "./web:/var/www:z"
+    networks:
+      - store_network
+  nginx :
+    hostname : store_nginx
+    build : ./Docker/nginx
+    container_name : store_nginx
+    restart : always
+    ports :
+      - "8001:80"
+    volumes :
+      - "./Docker/nginx/conf.d:/etc/nginx/conf.d/"
+      - "./web:/var/www:z"
+    links:
+      - php
+    networks :
+      - store_network
+  mysql:
+    hostname: store_mysql
+    image: mysql
+    container_name: store_mysql
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./Docker/data/mysql:/var/lib/mysql
+      - ./Docker/mysql/conf.d:/etc/mysql/conf.d
+    env_file:
+      - ./Docker/mysql/.env
+    restart: always
+    ports:
+      - 33065:3306
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "10"
+        max-size: "50m"
+    networks:
+      - store_network
+
+networks:
+  store_network:
+    driver: bridge
